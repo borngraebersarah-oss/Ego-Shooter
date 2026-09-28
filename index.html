@@ -42,7 +42,45 @@ canvas{display:block;width:100%;height:auto;touch-action:none;background:#111722
 button{font:inherit;touch-action:manipulation}
 .btn{width:100%;min-height:48px;border-radius:15px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font-weight:800;padding:12px;margin-top:9px}
 .btn.primary{background:var(--accent);color:#101827;border:none}
-.controls{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.controls{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.power-wrap{margin-top:10px}
+.power-btn{
+  width:100%;min-height:56px;border-radius:16px;border:1px solid var(--line);
+  background:#151c27;color:#6f7a8c;font-weight:900;padding:12px;
+}
+.power-btn.ready{
+  background:linear-gradient(90deg,#d7b467,#f0d98c);
+  color:#241b08;border-color:#f0d98c;
+  box-shadow:0 0 24px rgba(240,217,140,.16);
+}
+.power-btn.active{
+  background:#9ad8b4;color:#102219;border-color:#9ad8b4;
+}
+.power-note{font-size:11px;color:var(--muted);text-align:center;margin-top:5px}
+.game-shell.hidden{display:none}
+.help-screen{
+  display:none;
+  border:1px solid var(--line);
+  background:linear-gradient(180deg,var(--panel),#121720);
+  border-radius:20px;
+  padding:16px;
+  margin-top:10px;
+}
+.help-screen.show{display:block}
+.help-screen h2{margin:0 0 8px;font-size:24px}
+.help-screen p{margin:0 0 12px}
+.help-list{display:grid;gap:8px}
+.help-item{
+  display:grid;grid-template-columns:42px 1fr;gap:11px;
+  padding:12px;background:#101620;border:1px solid var(--line);border-radius:14px;
+}
+.help-item .ico{
+  width:38px;height:38px;border-radius:11px;background:var(--panel2);
+  display:flex;align-items:center;justify-content:center;font-weight:900;
+}
+.help-item b{display:block;margin-bottom:3px}
+.help-item p{font-size:13px;margin:0}
+
 .control{min-height:68px;border-radius:17px;border:1px solid var(--line);font-weight:900;font-size:16px;color:var(--text);background:#1a2230}
 .control small{display:block;color:var(--muted);font-weight:600;font-size:11px;margin-top:3px}
 .control:active{transform:scale(.985)}
@@ -70,6 +108,7 @@ button{font:inherit;touch-action:manipulation}
       <div class="stat"><b id="level">1</b><span>ESKALATIONSSTUFE</span></div>
     </div>
 
+    <div class="game-shell" id="gameShell">
     <div class="game-wrap">
       <canvas id="game" width="720" height="430" aria-label="Minispiel: Daniel weicht Forderungen aus"></canvas>
       <div class="overlay" id="overlay">
@@ -82,48 +121,16 @@ button{font:inherit;touch-action:manipulation}
       </div>
     </div>
 
-    <div class="help-card" id="helpCard">
-      <h2 style="margin:0 0 6px">So funktioniert's</h2>
-      <p style="margin-bottom:8px">Zwei Aktionen. Mehr musst du nicht wissen.</p>
-
-      <div class="help-step">
-        <div class="help-icon">↑</div>
-        <div>
-          <b>Springen</b>
-          <p>Über Forderungen hinweg. Wenn sie links aus dem Bild verschwinden, hast du erfolgreich nicht reagiert.</p>
-        </div>
-      </div>
-
-      <div class="help-step">
-        <div class="help-icon">N</div>
-        <div>
-          <b>NEIN.</b>
-          <p>Schickt die Forderung weg. Nicht die Person. Manchmal übernimmt das System mit „DELEGIERT.“.</p>
-        </div>
-      </div>
-
-      <div class="help-step">
-        <div class="help-icon">❤</div>
-        <div>
-          <b>Drei Nerven</b>
-          <p>Trifft dich eine Forderung, verlierst du einen Nerv. Bei null empfiehlt das System Notbetrieb.</p>
-        </div>
-      </div>
-
-      <div class="help-step">
-        <div class="help-icon">+</div>
-        <div>
-          <b>Punkte</b>
-          <p>Jede erfolgreich abgewehrte oder übersprungene Forderung rettet mentale Kapazität. Je mehr Punkte, desto chaotischer wird es.</p>
-        </div>
-      </div>
-
-      <button class="btn" id="closeHelpBtn" type="button">VERSTANDEN</button>
-    </div>
 
     <div class="controls">
-      <button class="control" id="jumpBtn" type="button">↑ SPRINGEN<small>über Forderungen hinweg</small></button>
-      <button class="control" id="noBtn" type="button">NEIN.<small>Request-Bubble wegschicken</small></button>
+      <button class="control" id="jumpBtn" type="button">↑ SPRINGEN<small>ausweichen</small></button>
+      <button class="control" id="noBtn" type="button">NEIN.<small>zurückweisen</small></button>
+      <button class="control" id="delegateBtn" type="button">DELEGIEREN<small>weitergeben</small></button>
+    </div>
+
+    <div class="power-wrap">
+      <button class="power-btn" id="powerBtn" type="button" disabled>⚡ SUPERKRAFT · bei 25 Punkten</button>
+      <div class="power-note" id="powerNote">Noch 25 Punkte bis zur nächsten Superkraft.</div>
     </div>
 
     <div class="log" id="log" aria-live="polite">System wartet auf unnötige Anforderungen.</div>
@@ -137,6 +144,33 @@ button{font:inherit;touch-action:manipulation}
       <span>👪 Familie</span>
       <span>🧠 Über-Ich</span>
       <span>📩 „Kurze Frage“</span>
+    </div>
+    </div>
+
+    <div class="help-screen" id="helpScreen">
+      <h2>So funktioniert's</h2>
+      <p>Vier Dinge. Danach kannst du wieder zurück ins Spiel.</p>
+
+      <div class="help-list">
+        <div class="help-item">
+          <div class="ico">↑</div>
+          <div><b>Springen</b><p>Über eine Forderung hinweg. Wenn sie links aus dem Bild verschwindet, hast du erfolgreich nicht reagiert.</p></div>
+        </div>
+        <div class="help-item">
+          <div class="ico">N</div>
+          <div><b>NEIN.</b><p>Die Forderung wird zurückgewiesen. Nicht die Person.</p></div>
+        </div>
+        <div class="help-item">
+          <div class="ico">D</div>
+          <div><b>Delegieren</b><p>Die Forderung wird an einen anderen erwachsenen Menschen weitergegeben. Ein durchaus innovatives Konzept.</p></div>
+        </div>
+        <div class="help-item">
+          <div class="ico">⚡</div>
+          <div><b>Superkraft</b><p>Bei jeweils 25 geretteten Punkten wird sie freigeschaltet. Aktivieren = alle aktuellen Forderungen verschwinden und du bist für ein paar Sekunden unverwundbar.</p></div>
+        </div>
+      </div>
+
+      <button class="btn primary" id="closeHelpBtn" type="button">VERSTANDEN · ZURÜCK ZUM SPIEL</button>
     </div>
   </section>
 
@@ -158,9 +192,16 @@ button{font:inherit;touch-action:manipulation}
   const helpBtn = document.getElementById('helpBtn');
   const jumpBtn = document.getElementById('jumpBtn');
   const noBtn = document.getElementById('noBtn');
+  const delegateBtn = document.getElementById('delegateBtn');
+  const powerBtn = document.getElementById('powerBtn');
+  const powerNote = document.getElementById('powerNote');
+  const gameShell = document.getElementById('gameShell');
+  const helpScreen = document.getElementById('helpScreen');
+  const closeHelpBtn = document.getElementById('closeHelpBtn');
 
   let running=false, raf=0, last=0, spawnTimer=0, score=0, lives=3, level=1;
   let particles=[], demands=[], projectiles=[], floaters=[];
+  let nextPowerAt=25, powerReady=false, invulnerableUntil=0;
   const groundY=350;
   const player={x:85,y:groundY-58,w:42,h:58,vy:0,onGround:true};
 
@@ -203,6 +244,9 @@ button{font:inherit;touch-action:manipulation}
     demands=[];projectiles=[];particles=[];floaters=[];
     player.y=groundY-player.h;player.vy=0;player.onGround=true;
     spawnTimer=0;
+    nextPowerAt=25;
+    powerReady=false;
+    invulnerableUntil=0;
     updateHUD();
   }
 
@@ -211,6 +255,21 @@ button{font:inherit;touch-action:manipulation}
     livesEl.textContent=lives;
     level=Math.min(9,1+Math.floor(score/12));
     levelEl.textContent=level;
+
+    if(score >= nextPowerAt && !powerReady){
+      powerReady = true;
+      powerBtn.disabled = false;
+      powerBtn.classList.add('ready');
+      powerBtn.textContent = '⚡ SUPERKRAFT BEREIT';
+      powerNote.textContent = 'Alles kurz weg. Unverwundbarkeit inklusive.';
+      setLog('Superkraft freigeschaltet. Das System erlaubt einmal kurz völlige Ruhe.');
+    } else if(!powerReady){
+      const remaining = Math.max(0,nextPowerAt-score);
+      powerBtn.disabled = true;
+      powerBtn.classList.remove('ready','active');
+      powerBtn.textContent = `⚡ SUPERKRAFT · bei ${nextPowerAt} Punkten`;
+      powerNote.textContent = `Noch ${remaining} Punkte bis zur nächsten Superkraft.`;
+    }
   }
 
   function start(){
@@ -243,8 +302,43 @@ button{font:inherit;touch-action:manipulation}
 
   function fireNo(){
     if(!running) return;
-    projectiles.push({x:player.x+player.w-2,y:player.y+22,w:58,h:26,vx:520,text:Math.random()<.22?'DELEGIERT.':'NEIN.'});
-    setLog(rand(noLines));
+    projectiles.push({x:player.x+player.w-2,y:player.y+22,w:58,h:26,vx:520,text:'NEIN.'});
+    setLog(rand(['Nicht heute.','Keine Kapazität.','Morgen.','Bitte mit Termin.','Nein ist ein vollständiger Satz.']));
+  }
+
+  function delegate(){
+    if(!running) return;
+    projectiles.push({x:player.x+player.w-2,y:player.y+22,w:72,h:26,vx:500,text:'DELEGIERT.'});
+    setLog(rand(['Delegiert.','Dafür gibt es andere Erwachsene.','Weitergegeben.','Nicht alles braucht Daniel persönlich.']));
+  }
+
+  function activatePower(){
+    if(!running || !powerReady) return;
+    powerReady=false;
+    powerBtn.disabled=true;
+    powerBtn.classList.remove('ready');
+    powerBtn.classList.add('active');
+    powerBtn.textContent='⚡ UNVERWUNDBAR';
+    powerNote.textContent='Für 5 Sekunden existieren fremde Anforderungen nur theoretisch.';
+    invulnerableUntil = performance.now() + 5000;
+
+    const removed = demands.length;
+    demands.forEach(d => {
+      burst(d.x+d.w/2,d.y+d.h/2);
+      addFloater(d.x,d.y-8,'Nicht zuständig ✓',true);
+    });
+    demands=[];
+    projectiles=[];
+    setLog(`Superkraft aktiviert. ${removed} Anforderungen wurden aus dem Arbeitsspeicher entfernt.`);
+
+    setTimeout(()=>{
+      if(performance.now() >= invulnerableUntil){
+        nextPowerAt += 25;
+        powerBtn.classList.remove('active');
+        updateHUD();
+        setLog('Unverwundbarkeit beendet. Leider existiert die Welt weiterhin.');
+      }
+    },5050);
   }
 
   function spawnDemand(){
@@ -328,11 +422,19 @@ button{font:inherit;touch-action:manipulation}
 
       if(rectHit(player,d)){
         demands.splice(i,1);
-        lives--;
-        addFloater(player.x+5,player.y-15,'+1 fremdes Problem',false);
-        setLog(rand(hitLines));
-        updateHUD();
-        if(lives<=0){gameOver();return;}
+        if(performance.now() < invulnerableUntil){
+          score++;
+          burst(d.x+d.w/2,d.y+d.h/2);
+          addFloater(player.x+5,player.y-15,'prallt ab ✓',true);
+          setLog('Unverwundbar. Diese Forderung hatte heute leider Pech.');
+          updateHUD();
+        } else {
+          lives--;
+          addFloater(player.x+5,player.y-15,'+1 fremdes Problem',false);
+          setLog(rand(hitLines));
+          updateHUD();
+          if(lives<=0){gameOver();return;}
+        }
         continue;
       }
 
@@ -389,6 +491,15 @@ button{font:inherit;touch-action:manipulation}
     // body
     ctx.save();
     ctx.translate(player.x,player.y);
+
+    if(performance.now() < invulnerableUntil){
+      ctx.strokeStyle='#f0d98c';
+      ctx.lineWidth=4;
+      ctx.beginPath();
+      ctx.arc(21,28,34,0,Math.PI*2);
+      ctx.stroke();
+      ctx.globalAlpha=.95;
+    }
     ctx.fillStyle='#e8edf6';
     roundRect(7,10,28,38,9);ctx.fill();
     ctx.fillStyle='#94b9ff';
@@ -490,37 +601,56 @@ button{font:inherit;touch-action:manipulation}
   }
 
   startBtn.addEventListener('click',start);
-  const helpCard = document.getElementById('helpCard');
-  const closeHelpBtn = document.getElementById('closeHelpBtn');
-
   helpBtn.addEventListener('click',()=>{
+    const wasRunning = running;
+    running=false;
+    cancelAnimationFrame(raf);
     overlay.classList.add('hidden');
-    helpCard.classList.add('show');
-    helpCard.scrollIntoView({behavior:'smooth',block:'start'});
+    gameShell.classList.add('hidden');
+    helpScreen.classList.add('show');
+    helpScreen.dataset.resume = wasRunning ? '1' : '0';
+    helpScreen.scrollIntoView({behavior:'smooth',block:'start'});
   });
 
   closeHelpBtn.addEventListener('click',()=>{
-    helpCard.classList.remove('show');
-    overlayTitle.textContent='Bereit?';
-    overlayText.textContent='Die Welt möchte erstaunlich viel. Du musst nicht alles einsammeln.';
-    startBtn.textContent='SYSTEM STARTEN';
-    overlay.classList.remove('hidden');
+    helpScreen.classList.remove('show');
+    gameShell.classList.remove('hidden');
+    const resume = helpScreen.dataset.resume === '1';
+    if(resume){
+      running=true;
+      last=performance.now();
+      raf=requestAnimationFrame(loop);
+      overlay.classList.add('hidden');
+    }else{
+      overlayTitle.textContent='Bereit?';
+      overlayText.textContent='Die Welt möchte erstaunlich viel. Du musst nicht alles einsammeln.';
+      startBtn.textContent='SYSTEM STARTEN';
+      overlay.classList.remove('hidden');
+    }
     document.querySelector('.game-wrap').scrollIntoView({behavior:'smooth',block:'start'});
   });
+
+
   jumpBtn.addEventListener('click',jump);
   noBtn.addEventListener('click',fireNo);
+  delegateBtn.addEventListener('click',delegate);
+  powerBtn.addEventListener('click',activatePower);
 
   canvas.addEventListener('pointerdown',(e)=>{
     if(!running)return;
     const rect=canvas.getBoundingClientRect();
     const x=(e.clientX-rect.left)/rect.width;
-    if(x<.5) jump(); else fireNo();
+    if(x<.34) jump();
+    else if(x<.67) fireNo();
+    else delegate();
   });
 
   document.addEventListener('keydown',(e)=>{
     if(!running)return;
     if(e.code==='Space'||e.code==='ArrowUp'){e.preventDefault();jump()}
-    if(e.code==='KeyN'||e.code==='ArrowRight'){e.preventDefault();fireNo()}
+    if(e.code==='KeyN'){e.preventDefault();fireNo()}
+    if(e.code==='KeyD'||e.code==='ArrowRight'){e.preventDefault();delegate()}
+    if(e.code==='KeyS'){e.preventDefault();activatePower()}
   });
 
   draw();
