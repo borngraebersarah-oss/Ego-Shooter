@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#0d1118">
+<title>Notfallprogramm – Demand Run</title>
+<style>
+:root{
+  --bg:#0d1118;--panel:#171d27;--panel2:#202836;--line:#303b4d;
+  --text:#f5f7fb;--muted:#aeb8c7;--accent:#94b9ff;--good:#9ad8b4;
+  --warn:#ffd18a;--danger:#ff9e9e;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+body{min-height:100vh}
+.app{max-width:760px;margin:auto;padding:calc(14px + env(safe-area-inset-top)) 12px calc(22px + env(safe-area-inset-bottom))}
+.head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
+.brand{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:800}
+.badge{border:1px solid var(--line);border-radius:999px;padding:7px 10px;font-size:12px;color:var(--muted)}
+.panel{border:1px solid var(--line);background:linear-gradient(180deg,var(--panel),#121720);border-radius:20px;padding:14px}
+h1{font-size:26px;line-height:1.05;margin:0 0 8px}
+p{line-height:1.45;margin:6px 0;color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+.stat{background:#101620;border:1px solid var(--line);border-radius:13px;padding:9px;text-align:center}
+.stat b{display:block;font-size:18px;color:var(--text)}
+.stat span{font-size:10px;color:var(--muted)}
+.game-wrap{margin-top:10px;border:1px solid var(--line);border-radius:18px;overflow:hidden;background:#10151e;position:relative}
+canvas{display:block;width:100%;height:auto;touch-action:none;background:#111722}
+.overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(7,10,15,.72)}
+.overlay.hidden{display:none}
+.modal{max-width:430px;text-align:center;background:#151c27;border:1px solid var(--line);border-radius:18px;padding:18px}
+.modal h2{margin:0 0 8px}
+button{font:inherit;touch-action:manipulation}
+.btn{width:100%;min-height:48px;border-radius:15px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font-weight:800;padding:12px;margin-top:9px}
+.btn.primary{background:var(--accent);color:#101827;border:none}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.control{min-height:68px;border-radius:17px;border:1px solid var(--line);font-weight:900;font-size:16px;color:var(--text);background:#1a2230}
+.control small{display:block;color:var(--muted);font-weight:600;font-size:11px;margin-top:3px}
+.control:active{transform:scale(.985)}
+.log{margin-top:10px;padding:10px 12px;border-radius:14px;background:#101620;border:1px solid var(--line);min-height:44px;font-size:13px;color:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.legend span{border:1px solid var(--line);border-radius:999px;padding:6px 8px;font-size:11px;color:var(--muted)}
+.footer{text-align:center;color:#657087;font-size:10px;margin-top:12px}
+@media(min-width:600px){.panel{padding:18px}h1{font-size:32px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="head">
+    <div class="brand">NOTFALLPROGRAMM · MINISPIEL</div>
+    <div class="badge">Demand Run</div>
+  </div>
+
+  <section class="panel">
+    <h1>Daniel gegen den Rest der Welt</h1>
+    <p>Laufen. Springen. Forderungen ausweichen. Wenn nötig: mit einem klaren <strong style="color:var(--text)">NEIN.</strong> aus dem Arbeitsspeicher entfernen.</p>
+
+    <div class="stats">
+      <div class="stat"><b id="score">0</b><span>MENTALE KAPAZITÄT GERETTET</span></div>
+      <div class="stat"><b id="lives">3</b><span>NERVEN</span></div>
+      <div class="stat"><b id="level">1</b><span>ESKALATIONSSTUFE</span></div>
+    </div>
+
+    <div class="game-wrap">
+      <canvas id="game" width="720" height="430" aria-label="Minispiel: Daniel weicht Forderungen aus"></canvas>
+      <div class="overlay" id="overlay">
+        <div class="modal">
+          <h2 id="overlayTitle">Bereit?</h2>
+          <p id="overlayText">Die Welt möchte erstaunlich viel. Du musst nicht alles einsammeln.</p>
+          <button class="btn primary" id="startBtn" type="button">SYSTEM STARTEN</button>
+          <button class="btn" id="helpBtn" type="button">Wie funktioniert das?</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="control" id="jumpBtn" type="button">↑ SPRINGEN<small>über Forderungen hinweg</small></button>
+      <button class="control" id="noBtn" type="button">NEIN.<small>Request-Bubble wegschicken</small></button>
+    </div>
+
+    <div class="log" id="log" aria-live="polite">System wartet auf unnötige Anforderungen.</div>
+
+    <div class="legend">
+      <span>👔 Mitarbeiter</span>
+      <span>💼 Kunde</span>
+      <span>🍻 Kumpels</span>
+      <span>💍 JGA</span>
+      <span>🏠 Zuhause</span>
+      <span>👪 Familie</span>
+      <span>🧠 Über-Ich</span>
+      <span>📩 „Kurze Frage“</span>
+    </div>
+  </section>
+
+  <div class="footer">Keine realen Menschen werden abgeschossen. Nur ihre Anforderungen.</div>
+</div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const scoreEl = document.getElementById('score');
+  const livesEl = document.getElementById('lives');
+  const levelEl = document.getElementById('level');
+  const logEl = document.getElementById('log');
+  const overlay = document.getElementById('overlay');
+  const overlayTitle = document.getElementById('overlayTitle');
+  const overlayText = document.getElementById('overlayText');
+  const startBtn = document.getElementById('startBtn');
+  const helpBtn = document.getElementById('helpBtn');
+  const jumpBtn = document.getElementById('jumpBtn');
+  const noBtn = document.getElementById('noBtn');
+
+  let running=false, raf=0, last=0, spawnTimer=0, score=0, lives=3, level=1;
+  let particles=[], demands=[], projectiles=[], floaters=[];
+  const groundY=350;
+  const player={x:85,y:groundY-58,w:42,h:58,vy:0,onGround:true};
+
+  const demandTypes=[
+    {who:'Mitarbeiter', icon:'👔', asks:['Kannst du kurz entscheiden?','Hast du 5 Minuten?','Kannst du das eben freigeben?','Ich hab da ein Problem.']},
+    {who:'Kunde', icon:'💼', asks:['Nur eine kleine Änderung.','Können wir kurz telefonieren?','Das müsste heute noch raus.','Wir hätten da noch eine Frage.']},
+    {who:'Kumpels', icon:'🍻', asks:['Planst du das noch?','Wo gehen wir danach hin?','Wer reserviert?','Was machen wir Samstag?']},
+    {who:'JGA', icon:'💍', asks:['Noch eine bessere Aktivität?','Noch ein Programmpunkt?','Vielleicht doch umplanen?','Haben wirklich alle Spaß?']},
+    {who:'Zuhause', icon:'🏠', asks:['Du brauchst noch Lampen.','Und die Möbel?','Da fehlt noch was.','Das könnte schöner sein.']},
+    {who:'Familie', icon:'👪', asks:['Kannst du dich kümmern?','Wann machst du das?','Denk bitte noch an …','Hast du schon organisiert?']},
+    {who:'Über-Ich', icon:'🧠', asks:['Du könntest produktiver sein.','Du hast etwas vergessen.','Das geht noch besser.','Du solltest noch …']},
+    {who:'Kurze Frage', icon:'📩', asks:['Kurze Frage …','Nur ganz kurz …','Eine Sache noch …','Bist du gerade erreichbar?']}
+  ];
+
+  const noLines=[
+    'Nicht heute.',
+    'Delegiert.',
+    'Keine Kapazität.',
+    'Morgen.',
+    'Nicht mein Zirkus.',
+    'Bitte mit Termin.',
+    'Dafür gibt es andere Erwachsene.',
+    'Wiedervorlage: irgendwann.'
+  ];
+
+  const hitLines=[
+    'Anforderung versehentlich eingesammelt.',
+    'Achtung: fremdes Problem im Inventar.',
+    '„Nur kurz“ war erwartungsgemäß nicht kurz.',
+    'Mentale RAM-Auslastung gestiegen.',
+    'Das Über-Ich hat einen Treffer gelandet.'
+  ];
+
+  function rand(a){return a[Math.floor(Math.random()*a.length)]}
+  function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+  function setLog(t){logEl.textContent=t}
+
+  function reset(){
+    score=0;lives=3;level=1;
+    demands=[];projectiles=[];particles=[];floaters=[];
+    player.y=groundY-player.h;player.vy=0;player.onGround=true;
+    spawnTimer=0;
+    updateHUD();
+  }
+
+  function updateHUD(){
+    scoreEl.textContent=score;
+    livesEl.textContent=lives;
+    level=Math.min(9,1+Math.floor(score/12));
+    levelEl.textContent=level;
+  }
+
+  function start(){
+    cancelAnimationFrame(raf);
+    reset();
+    running=true;
+    overlay.classList.add('hidden');
+    last=performance.now();
+    setLog('System läuft. Erste unnötige Anfrage wird bereits vorbereitet.');
+    raf=requestAnimationFrame(loop);
+  }
+
+  function gameOver(){
+    running=false;
+    cancelAnimationFrame(raf);
+    overlayTitle.textContent='Notbetrieb empfohlen.';
+    overlayText.innerHTML=`Du hast <strong>${score}</strong> Anforderungen erfolgreich nicht zu deinem Problem gemacht. Das reicht für heute völlig.`;
+    startBtn.textContent='NOCHMAL';
+    overlay.classList.remove('hidden');
+  }
+
+  function jump(){
+    if(!running) return;
+    if(player.onGround){
+      player.vy=-760;
+      player.onGround=false;
+      setLog('Problem elegant übersprungen.');
+    }
+  }
+
+  function fireNo(){
+    if(!running) return;
+    projectiles.push({x:player.x+player.w-2,y:player.y+22,w:58,h:26,vx:520,text:Math.random()<.22?'DELEGIERT.':'NEIN.'});
+    setLog(rand(noLines));
+  }
+
+  function spawnDemand(){
+    const type=rand(demandTypes);
+    const ask=rand(type.asks);
+    const elevated=Math.random() < 0.27 + level*0.025;
+    const size= elevated ? 48 : 54;
+    demands.push({
+      x:canvas.width+30,
+      y:elevated?groundY-130:groundY-size,
+      w:size,
+      h:size,
+      vx:170+level*18+Math.random()*45,
+      type, ask,
+      bubbleX:0,bubbleY:0,
+      bob:Math.random()*Math.PI*2
+    });
+  }
+
+  function addFloater(x,y,text,good=true){
+    floaters.push({x,y,text,life:1.15,good});
+  }
+
+  function burst(x,y){
+    for(let i=0;i<12;i++){
+      particles.push({
+        x,y,vx:(Math.random()-.5)*220,vy:(Math.random()-.7)*210,
+        life:.65+Math.random()*.4,r:2+Math.random()*3
+      });
+    }
+  }
+
+  function rectHit(a,b){
+    return a.x < b.x+b.w && a.x+a.w>b.x && a.y < b.y+b.h && a.y+a.h>b.y;
+  }
+
+  function update(dt){
+    const gravity=1850;
+    player.vy += gravity*dt;
+    player.y += player.vy*dt;
+    if(player.y>=groundY-player.h){
+      player.y=groundY-player.h;player.vy=0;player.onGround=true;
+    }
+
+    spawnTimer-=dt;
+    const base=Math.max(.58,1.55-level*.11);
+    if(spawnTimer<=0){
+      spawnDemand();
+      spawnTimer=base*(.75+Math.random()*.65);
+    }
+
+    demands.forEach(d=>{
+      d.x-=d.vx*dt;
+      d.bob+=dt*4;
+      if(d.y<groundY-d.h-20) d.y += Math.sin(d.bob)*10*dt;
+    });
+
+    projectiles.forEach(p=>p.x+=p.vx*dt);
+    particles.forEach(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=420*dt;p.life-=dt});
+    floaters.forEach(f=>{f.y-=38*dt;f.life-=dt});
+
+    for(let i=demands.length-1;i>=0;i--){
+      const d=demands[i];
+      let destroyed=false;
+
+      for(let j=projectiles.length-1;j>=0;j--){
+        const p=projectiles[j];
+        if(rectHit(p,d)){
+          projectiles.splice(j,1);
+          demands.splice(i,1);
+          score++;
+          burst(d.x+d.w/2,d.y+d.h/2);
+          addFloater(d.x,d.y-8,'Nicht dein Problem ✓',true);
+          setLog(`${d.type.who}: „${d.ask}“ → ${rand(noLines)}`);
+          updateHUD();
+          destroyed=true;
+          break;
+        }
+      }
+      if(destroyed) continue;
+
+      if(rectHit(player,d)){
+        demands.splice(i,1);
+        lives--;
+        addFloater(player.x+5,player.y-15,'+1 fremdes Problem',false);
+        setLog(rand(hitLines));
+        updateHUD();
+        if(lives<=0){gameOver();return;}
+        continue;
+      }
+
+      if(d.x+d.w<0){
+        demands.splice(i,1);
+        score++;
+        addFloater(70,285,'Ausgewichen ✓',true);
+        updateHUD();
+      }
+    }
+
+    projectiles=projectiles.filter(p=>p.x<canvas.width+100);
+    particles=particles.filter(p=>p.life>0);
+    floaters=floaters.filter(f=>f.life>0);
+  }
+
+  function roundRect(x,y,w,h,r){
+    const rr=Math.min(r,w/2,h/2);
+    ctx.beginPath();
+    ctx.moveTo(x+rr,y);ctx.arcTo(x+w,y,x+w,y+h,rr);ctx.arcTo(x+w,y+h,x,y+h,rr);
+    ctx.arcTo(x,y+h,x,y,rr);ctx.arcTo(x,y,x+w,y,rr);ctx.closePath();
+  }
+
+  function drawBackground(){
+    ctx.fillStyle='#111722';ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    // matrix-ish skyline
+    ctx.fillStyle='#151e2a';
+    for(let i=0;i<12;i++){
+      const x=i*70-(score*7%70);
+      const h=55+(i%4)*18;
+      ctx.fillRect(x,groundY-h,48,h);
+      ctx.fillStyle='#263247';
+      for(let yy=groundY-h+12;yy<groundY-10;yy+=18){
+        ctx.fillRect(x+9,yy,5,7);ctx.fillRect(x+27,yy,5,7);
+      }
+      ctx.fillStyle='#151e2a';
+    }
+
+    // ground
+    ctx.fillStyle='#202a38';ctx.fillRect(0,groundY,canvas.width,80);
+    ctx.strokeStyle='#364359';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(0,groundY);ctx.lineTo(canvas.width,groundY);ctx.stroke();
+
+    // scrolling lane marks
+    ctx.strokeStyle='#3a4658';ctx.lineWidth=3;
+    const off=(performance.now()/8)%80;
+    for(let x=-off;x<canvas.width;x+=80){
+      ctx.beginPath();ctx.moveTo(x,388);ctx.lineTo(x+36,388);ctx.stroke();
+    }
+  }
+
+  function drawPlayer(){
+    // body
+    ctx.save();
+    ctx.translate(player.x,player.y);
+    ctx.fillStyle='#e8edf6';
+    roundRect(7,10,28,38,9);ctx.fill();
+    ctx.fillStyle='#94b9ff';
+    roundRect(4,18,34,28,8);ctx.fill();
+    // head
+    ctx.fillStyle='#f2c9a5';ctx.beginPath();ctx.arc(21,9,10,0,Math.PI*2);ctx.fill();
+    // hair
+    ctx.fillStyle='#3b3f46';ctx.beginPath();ctx.arc(21,6,10,Math.PI,Math.PI*2);ctx.fill();
+    // legs
+    ctx.strokeStyle='#e8edf6';ctx.lineWidth=5;
+    ctx.beginPath();ctx.moveTo(15,45);ctx.lineTo(12,57);ctx.moveTo(28,45);ctx.lineTo(31,57);ctx.stroke();
+    // D badge
+    ctx.fillStyle='#0d1118';ctx.font='bold 14px system-ui';ctx.fillText('D',16,36);
+    ctx.restore();
+  }
+
+  function wrapText(text,maxWidth){
+    const words=text.split(' '),lines=[];let line='';
+    for(const w of words){
+      const t=line?line+' '+w:w;
+      if(ctx.measureText(t).width>maxWidth && line){lines.push(line);line=w}else line=t;
+    }
+    if(line)lines.push(line);
+    return lines.slice(0,3);
+  }
+
+  function drawDemand(d){
+    ctx.save();
+
+    // person/request source
+    ctx.font='30px system-ui';
+    ctx.textAlign='center';
+    ctx.fillText(d.type.icon,d.x+d.w/2,d.y+d.h-5);
+
+    // label
+    ctx.font='bold 10px system-ui';
+    ctx.fillStyle='#aeb8c7';
+    ctx.fillText(d.type.who.toUpperCase(),d.x+d.w/2,d.y+d.h+11);
+
+    // speech bubble above
+    ctx.font='bold 12px system-ui';
+    ctx.textAlign='left';
+    const bw=152,bh=58,bx=d.x-48,by=d.y-70;
+    ctx.fillStyle='#f2f5fa';
+    roundRect(bx,by,bw,bh,10);ctx.fill();
+    ctx.fillStyle='#111722';
+    const lines=wrapText(d.ask,bw-16);
+    lines.forEach((line,i)=>ctx.fillText(line,bx+8,by+18+i*15));
+
+    // tiny tail
+    ctx.beginPath();ctx.moveTo(d.x+20,d.y-12);ctx.lineTo(d.x+32,d.y);ctx.lineTo(d.x+43,d.y-12);ctx.closePath();
+    ctx.fillStyle='#f2f5fa';ctx.fill();
+
+    ctx.restore();
+  }
+
+  function drawProjectile(p){
+    ctx.save();
+    ctx.fillStyle=p.text==='DELEGIERT.'?'#9ad8b4':'#94b9ff';
+    roundRect(p.x,p.y,p.w,p.h,12);ctx.fill();
+    ctx.fillStyle='#101827';ctx.font='900 10px system-ui';ctx.textAlign='center';
+    ctx.fillText(p.text,p.x+p.w/2,p.y+17);
+    ctx.restore();
+  }
+
+  function draw(){
+    drawBackground();
+    drawPlayer();
+    demands.forEach(drawDemand);
+    projectiles.forEach(drawProjectile);
+
+    particles.forEach(p=>{
+      ctx.globalAlpha=clamp(p.life,0,1);
+      ctx.fillStyle='#94b9ff';
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();
+    });
+    ctx.globalAlpha=1;
+
+    floaters.forEach(f=>{
+      ctx.globalAlpha=clamp(f.life,0,1);
+      ctx.font='bold 13px system-ui';
+      ctx.fillStyle=f.good?'#9ad8b4':'#ff9e9e';
+      ctx.fillText(f.text,f.x,f.y);
+    });
+    ctx.globalAlpha=1;
+
+    // occasional top message
+    ctx.fillStyle='#7d8899';ctx.font='11px system-ui';ctx.textAlign='right';
+    ctx.fillText(level>=6?'WARNUNG: Erwartungsdichte kritisch':'Mentale RAM-Verwaltung aktiv',canvas.width-14,22);
+  }
+
+  function loop(t){
+    if(!running)return;
+    const dt=Math.min(.033,(t-last)/1000||0);
+    last=t;
+    update(dt);
+    draw();
+    if(running) raf=requestAnimationFrame(loop);
+  }
+
+  startBtn.addEventListener('click',start);
+  helpBtn.addEventListener('click',()=>{
+    overlayTitle.textContent='Zwei Regeln.';
+    overlayText.innerHTML='↑ <strong>Springen</strong>: einer Forderung ausweichen.<br><br><strong>NEIN.</strong>: die Forderung abschießen – nicht die Person. Treffer erhöhen deine gerettete mentale Kapazität.';
+    startBtn.textContent='VERSTANDEN. LOS.';
+  });
+  jumpBtn.addEventListener('click',jump);
+  noBtn.addEventListener('click',fireNo);
+
+  canvas.addEventListener('pointerdown',(e)=>{
+    if(!running)return;
+    const rect=canvas.getBoundingClientRect();
+    const x=(e.clientX-rect.left)/rect.width;
+    if(x<.5) jump(); else fireNo();
+  });
+
+  document.addEventListener('keydown',(e)=>{
+    if(!running)return;
+    if(e.code==='Space'||e.code==='ArrowUp'){e.preventDefault();jump()}
+    if(e.code==='KeyN'||e.code==='ArrowRight'){e.preventDefault();fireNo()}
+  });
+
+  draw();
+})();
+</script>
+</body>
+</html>
