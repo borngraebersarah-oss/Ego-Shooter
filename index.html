@@ -31,6 +31,14 @@ canvas{display:block;width:100%;height:auto;touch-action:none;background:#111722
 .overlay.hidden{display:none}
 .modal{max-width:430px;text-align:center;background:#151c27;border:1px solid var(--line);border-radius:18px;padding:18px}
 .modal h2{margin:0 0 8px}
+.help-card{display:none;margin-top:10px;border:1px solid var(--line);background:#101620;border-radius:16px;padding:14px}
+.help-card.show{display:block}
+.help-step{display:grid;grid-template-columns:38px 1fr;gap:10px;align-items:start;padding:10px 0;border-top:1px solid var(--line)}
+.help-step:first-child{border-top:none}
+.help-icon{width:34px;height:34px;border-radius:10px;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-weight:900}
+.help-step b{display:block;margin-bottom:3px}
+.help-step p{margin:0;font-size:13px}
+
 button{font:inherit;touch-action:manipulation}
 .btn{width:100%;min-height:48px;border-radius:15px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font-weight:800;padding:12px;margin-top:9px}
 .btn.primary{background:var(--accent);color:#101827;border:none}
@@ -72,6 +80,45 @@ button{font:inherit;touch-action:manipulation}
           <button class="btn" id="helpBtn" type="button">Wie funktioniert das?</button>
         </div>
       </div>
+    </div>
+
+    <div class="help-card" id="helpCard">
+      <h2 style="margin:0 0 6px">So funktioniert's</h2>
+      <p style="margin-bottom:8px">Zwei Aktionen. Mehr musst du nicht wissen.</p>
+
+      <div class="help-step">
+        <div class="help-icon">↑</div>
+        <div>
+          <b>Springen</b>
+          <p>Über Forderungen hinweg. Wenn sie links aus dem Bild verschwinden, hast du erfolgreich nicht reagiert.</p>
+        </div>
+      </div>
+
+      <div class="help-step">
+        <div class="help-icon">N</div>
+        <div>
+          <b>NEIN.</b>
+          <p>Schickt die Forderung weg. Nicht die Person. Manchmal übernimmt das System mit „DELEGIERT.“.</p>
+        </div>
+      </div>
+
+      <div class="help-step">
+        <div class="help-icon">❤</div>
+        <div>
+          <b>Drei Nerven</b>
+          <p>Trifft dich eine Forderung, verlierst du einen Nerv. Bei null empfiehlt das System Notbetrieb.</p>
+        </div>
+      </div>
+
+      <div class="help-step">
+        <div class="help-icon">+</div>
+        <div>
+          <b>Punkte</b>
+          <p>Jede erfolgreich abgewehrte oder übersprungene Forderung rettet mentale Kapazität. Je mehr Punkte, desto chaotischer wird es.</p>
+        </div>
+      </div>
+
+      <button class="btn" id="closeHelpBtn" type="button">VERSTANDEN</button>
     </div>
 
     <div class="controls">
@@ -443,10 +490,22 @@ button{font:inherit;touch-action:manipulation}
   }
 
   startBtn.addEventListener('click',start);
+  const helpCard = document.getElementById('helpCard');
+  const closeHelpBtn = document.getElementById('closeHelpBtn');
+
   helpBtn.addEventListener('click',()=>{
-    overlayTitle.textContent='Zwei Regeln.';
-    overlayText.innerHTML='↑ <strong>Springen</strong>: einer Forderung ausweichen.<br><br><strong>NEIN.</strong>: die Forderung abschießen – nicht die Person. Treffer erhöhen deine gerettete mentale Kapazität.';
-    startBtn.textContent='VERSTANDEN. LOS.';
+    overlay.classList.add('hidden');
+    helpCard.classList.add('show');
+    helpCard.scrollIntoView({behavior:'smooth',block:'start'});
+  });
+
+  closeHelpBtn.addEventListener('click',()=>{
+    helpCard.classList.remove('show');
+    overlayTitle.textContent='Bereit?';
+    overlayText.textContent='Die Welt möchte erstaunlich viel. Du musst nicht alles einsammeln.';
+    startBtn.textContent='SYSTEM STARTEN';
+    overlay.classList.remove('hidden');
+    document.querySelector('.game-wrap').scrollIntoView({behavior:'smooth',block:'start'});
   });
   jumpBtn.addEventListener('click',jump);
   noBtn.addEventListener('click',fireNo);
